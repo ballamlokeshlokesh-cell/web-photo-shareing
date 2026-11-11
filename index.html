@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101828">
+  <meta name="description" content="Share event photos and videos instantly with one QR code.">
+  <title>Gather — Live Photo & Video Sharing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./"><span class="brand-mark">g</span><span>gather<span class="brand-dot">.</span></span></a>
+    <div class="top-actions"><span class="live-indicator"><i></i> Live sharing</span><button class="btn btn-ghost btn-small" id="adminNav">Admin</button></div>
+  </header>
+
+  <main>
+    <section id="homeView" class="hero-view">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-line"></span> EVERY MOMENT, TOGETHER</span>
+        <h1>Your event.<br><span>Everyone’s moments.</span></h1>
+        <p class="hero-description">One QR code brings everyone’s photos and videos into one beautiful, live gallery. No app required.</p>
+        <div class="hero-actions"><button class="btn btn-primary" id="createFromHero">Create a gallery <span>→</span></button><button class="btn btn-secondary" id="joinInfo">How it works</button></div>
+        <div class="trust-row"><span>✓ No app to install</span><span>✓ Instant sharing</span><span>✓ Easy downloads</span></div>
+      </div>
+      <div class="hero-art">
+        <div class="art-glow"></div><div class="photo-card card-back"><div class="fake-photo photo-two"></div><span>Good times, together</span></div>
+        <div class="photo-card card-front"><div class="fake-photo photo-one"></div><div class="photo-caption"><b>Moments that matter</b><small>Shared by everyone</small></div></div>
+        <div class="floating-tag tag-live"><i></i> 12 people sharing</div><div class="floating-tag tag-upload">↗ Photos are coming in</div>
+      </div>
+    </section>
+
+    <section id="joinView" class="join-view hidden">
+      <div class="join-heading"><span class="eyebrow"><span class="eyebrow-line"></span> YOU’RE INVITED</span><h1 id="joinTitle">Shared event gallery</h1><p id="joinSubtitle">Add your photos and videos to the collection.</p></div>
+      <div class="upload-panel">
+        <div class="upload-panel-top"><div><b>Share your moments</b><p>Choose photos or videos from your phone, or capture new ones.</p></div><span class="secure-pill">● Private link</span></div>
+        <div class="upload-actions">
+          <label class="upload-choice"><input id="cameraPhoto" type="file" accept="image/*" capture="environment"><span class="choice-icon">◎</span><b>Take a photo</b><small>Open your camera</small></label>
+          <label class="upload-choice"><input id="cameraVideo" type="file" accept="video/*" capture="environment"><span class="choice-icon">▶</span><b>Record a video</b><small>Open video camera</small></label>
+          <label class="upload-choice"><input id="galleryFiles" type="file" accept="image/*,video/*" multiple><span class="choice-icon">▧</span><b>Choose files</b><small>From your gallery</small></label>
+        </div>
+        <div class="upload-note">Images and videos are uploaded to this event gallery. Please share only media you have permission to share.</div>
+        <div id="uploadQueue" class="upload-queue hidden"></div>
+      </div>
+      <div class="gallery-heading"><div><span class="eyebrow"><span class="eyebrow-line"></span> THE COLLECTION</span><h2>Live gallery <span class="live-badge"><i></i> LIVE</span></h2><p id="galleryCount">Waiting for the first memory…</p></div><button id="downloadAll" class="btn btn-secondary" disabled>↓ Download all</button></div>
+      <div id="galleryGrid" class="gallery-grid"><div class="empty-state"><div class="empty-icon">▧</div><b>Your gallery is ready</b><p>New photos and videos will appear here automatically.</p></div></div>
+    </section>
+
+    <section id="adminView" class="admin-view hidden">
+      <div class="section-heading"><span class="eyebrow"><span class="eyebrow-line"></span> CONTROL CENTER</span><h1>Your galleries</h1><p>Create an event gallery, share its QR code, and watch memories arrive.</p></div>
+      <div id="loginPanel" class="login-panel">
+        <div class="login-icon">✳</div><h2>Admin sign in</h2><p>Sign in with the administrator account you enabled in Firebase Authentication.</p>
+        <form id="loginForm"><label>Email address<input id="email" type="email" autocomplete="username" required placeholder="you@example.com"></label><label>Password<input id="password" type="password" autocomplete="current-password" required placeholder="Your password"></label><button class="btn btn-primary full" type="submit">Sign in <span>→</span></button></form><div id="loginError" class="error-text"></div>
+      </div>
+      <div id="dashboardPanel" class="hidden">
+        <div class="dashboard-toolbar"><div><h2>All galleries</h2><p id="adminEmail" class="muted"></p></div><div class="toolbar-actions"><button id="newSession" class="btn btn-primary">＋ New gallery</button><button id="signOut" class="btn btn-ghost">Sign out</button></div></div>
+        <div id="sessionList" class="session-list"><div class="empty-state compact">Loading your galleries…</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer><a class="brand footer-brand" href="./"><span class="brand-mark">g</span><span>gather<span class="brand-dot">.</span></span></a><span>Made for moments worth sharing.</span><span class="footer-right">Live photo & video sharing</span></footer>
+
+  <div id="toast" class="toast" role="status"></div>
+  <div id="sessionModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-backdrop" data-close="modal"></div><div class="modal-card">
+      <button class="modal-close" data-close="modal" aria-label="Close">×</button><span class="eyebrow"><span class="eyebrow-line"></span> NEW SHARED GALLERY</span><h2 id="modalTitle">Give your event a name</h2><p>We’ll create a unique QR code and link for your guests.</p>
+      <form id="sessionForm"><label>Gallery name<input id="sessionName" maxlength="60" required placeholder="e.g. Priya & Arjun’s wedding"></label><button class="btn btn-primary full" type="submit">Create gallery <span>→</span></button></form>
+    </div>
+  </div>
+  <div id="qrModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="qrTitle">
+    <div class="modal-backdrop" data-close="qr"></div><div class="modal-card qr-card">
+      <button class="modal-close" data-close="qr" aria-label="Close">×</button><span class="eyebrow"><span class="eyebrow-line"></span> READY TO SHARE</span><h2 id="qrTitle">Your gallery is ready</h2><p>Guests can scan this code with their phone camera to open the upload page.</p>
+      <div class="qr-frame"><canvas id="qrCanvas" width="240" height="240"></canvas></div><div class="share-url" id="shareUrl"></div>
+      <div class="qr-actions"><button id="downloadQr" class="btn btn-secondary">↓ Save QR code</button><button id="copyLink" class="btn btn-primary">Copy link</button></div>
+    </div>
+  </div>
+  <div id="previewModal" class="modal hidden" role="dialog" aria-modal="true"><div class="modal-backdrop" data-close="preview"></div><div class="preview-card"><button class="modal-close light-close" data-close="preview">×</button><div id="previewContent"></div></div></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false; // Create admin documents manually in Firebase Console.
+    }
+    match /sessions/{sessionId} {
+      allow read: if true; // The QR link contains an unguessable session ID; share it only with intended guests.
+      allow create: if isAdmin()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.active == true
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60;
+      allow update, delete: if isAdmin()
+        && resource.data.ownerUid == request.auth.uid;
+      match /uploads/{uploadId} {
+        allow read: if true;
+        allow create: if get(/databases/$(database)/documents/sessions/$(sessionId)).data.active == true
+          && request.resource.data.keys().hasOnly(['name','contentType','size','path','url','createdAt'])
+          && request.resource.data.name is string
+          && request.resource.data.contentType is string
+          && (request.resource.data.contentType.matches('image/.*') || request.resource.data.contentType.matches('video/.*'))
+          && request.resource.data.size is int
+          && request.resource.data.size > 0
+          && request.resource.data.size <= 209715200
+          && request.resource.data.path is string
+          && request.resource.data.url is string;
+        allow update: if false;
+        allow delete: if isAdmin()
+          && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+      }
+    }
+  }
+}
