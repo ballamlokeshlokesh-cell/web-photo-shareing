@@ -24,10 +24,10 @@ The repository is configured with a GitHub Actions workflow to deploy automatica
 
 1. Open your published website URL:
    `https://ballamlokeshlokesh-cell.github.io/web-photo-shareing/`
-2. Click **Admin** in the top navigation.
-3. Click **Create account** to register your admin user (or sign in if already registered).
-4. Click **＋ New gallery**, enter your event name (e.g. *Sarah's Birthday*), and click **Create gallery**.
-5. Save or print the QR code, or share the direct link with your guests!
+2. **Guests**: Paste any shared gallery link or event code into the **Join an Event Gallery** box and click **Join & View Photos** to immediately view pictures and upload photos/videos.
+3. **Hosts**: Click **Sign In / Create Account** to sign in or register your host account.
+4. Once signed in, the **＋ Create a gallery** button will appear on the homepage and in your control center.
+5. Click **Create a gallery**, give your event a name, and generate your live QR code ready to print or share!
 
 ---
 

@@ -237,51 +237,109 @@ function fileToDataUrl(file) {
 }
 
 // Navigation & Actions
-$("adminNav").onclick = () => {
-  history.pushState({ view: "admin" }, "", baseUrl() + "?admin=1");
-  showView("adminView");
-  renderAuth();
-};
+if ($("homeNav")) {
+  $("homeNav").onclick = () => {
+    history.pushState({ view: "home" }, "", baseUrl());
+    showView("homeView");
+  };
+}
 
-$("homeNav").onclick = () => {
-  history.pushState({ view: "home" }, "", baseUrl());
-  showView("homeView");
-};
+if ($("brandNav")) {
+  $("brandNav").onclick = e => {
+    e.preventDefault();
+    history.pushState({ view: "home" }, "", baseUrl());
+    showView("homeView");
+  };
+}
 
-$("brandNav").onclick = e => {
-  e.preventDefault();
-  history.pushState({ view: "home" }, "", baseUrl());
-  showView("homeView");
-};
+if ($("navSignInBtn")) {
+  $("navSignInBtn").onclick = () => {
+    history.pushState({ view: "admin" }, "", baseUrl() + "?admin=1");
+    showView("adminView");
+    setAuthMode(false);
+  };
+}
 
-$("createFromHero").onclick = () => {
-  openModal("sessionModal");
-};
+if ($("loginFromHero")) {
+  $("loginFromHero").onclick = () => {
+    history.pushState({ view: "admin" }, "", baseUrl() + "?admin=1");
+    showView("adminView");
+    setAuthMode(false);
+  };
+}
 
-$("joinInfo").onclick = () => {
-  toast("Create a gallery, share its QR code, and guests can upload from their phones.");
-};
+if ($("createFromHero")) {
+  $("createFromHero").onclick = () => {
+    openModal("sessionModal");
+  };
+}
 
-$("newSession").onclick = () => {
-  openModal("sessionModal");
-};
+if ($("myGalleriesBtn")) {
+  $("myGalleriesBtn").onclick = () => {
+    history.pushState({ view: "admin" }, "", baseUrl() + "?admin=1");
+    showView("adminView");
+  };
+}
 
-$("heroJoinBtn").onclick = () => {
-  const input = $("heroSessionInput").value.trim();
-  if (!input) return toast("Please enter a gallery link or ID.");
-  let sid = input;
-  try {
-    const u = new URL(input);
-    const p = u.searchParams.get("session");
-    if (p) sid = p;
-  } catch {}
-  history.pushState({ view: "join", session: sid }, "", sessionUrl(sid));
-  startJoin(sid);
-};
+if ($("navDashboardBtn")) {
+  $("navDashboardBtn").onclick = () => {
+    history.pushState({ view: "admin" }, "", baseUrl() + "?admin=1");
+    showView("adminView");
+  };
+}
 
-$("heroSessionInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") $("heroJoinBtn").click();
-});
+if ($("navSignOutBtn")) {
+  $("navSignOutBtn").onclick = async () => {
+    try {
+      await signOut(auth);
+      toast("Signed out successfully.");
+      history.pushState({ view: "home" }, "", baseUrl());
+      showView("homeView");
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+}
+
+if ($("joinInfo")) {
+  $("joinInfo").onclick = () => {
+    toast("Host creates a gallery, shares the QR code or link, and guests can view and upload photos.");
+  };
+}
+
+if ($("newSession")) {
+  $("newSession").onclick = () => {
+    openModal("sessionModal");
+  };
+}
+
+// Paste gallery link or code to join and see pics
+if ($("heroJoinBtn")) {
+  $("heroJoinBtn").onclick = () => {
+    const input = ($("heroSessionInput")?.value || "").trim();
+    if (!input) return toast("Please paste a gallery link or enter a gallery code.");
+    let sid = input;
+    try {
+      const u = new URL(input);
+      const p = u.searchParams.get("session");
+      if (p) sid = p;
+    } catch {}
+    if (sid.includes("session=")) {
+      const m = sid.match(/session=([^&/#]+)/);
+      if (m) sid = decodeURIComponent(m[1]);
+    }
+    sid = sid.replace(/[^a-zA-Z0-9_\-]/g, "");
+    if (!sid) return toast("Please enter a valid gallery link or code.");
+    history.pushState({ view: "join", session: sid }, "", sessionUrl(sid));
+    startJoin(sid);
+  };
+}
+
+if ($("heroSessionInput")) {
+  $("heroSessionInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") $("heroJoinBtn")?.click();
+  });
+}
 
 // Auth tabs toggle
 function setAuthMode(signUp) {
@@ -336,7 +394,18 @@ $("loginForm").addEventListener("submit", async e => {
   }
 });
 
-$("signOut").onclick = () => signOut(auth);
+if ($("signOut")) {
+  $("signOut").onclick = async () => {
+    try {
+      await signOut(auth);
+      toast("Signed out successfully.");
+      history.pushState({ view: "home" }, "", baseUrl());
+      showView("homeView");
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+}
 
 // Toggle setup helper accordion
 $("toggleSetupHelp").onclick = () => {
@@ -488,20 +557,65 @@ async function openQr(id, name) {
   };
 }
 
+function updateAuthStateUI(user) {
+  currentUser = user;
+
+  // Topbar elements
+  const navSignInBtn = $("navSignInBtn");
+  const navUserEmail = $("navUserEmail");
+  const navDashboardBtn = $("navDashboardBtn");
+  const navSignOutBtn = $("navSignOutBtn");
+
+  if (user) {
+    if (navSignInBtn) navSignInBtn.classList.add("hidden");
+    if (navUserEmail) {
+      navUserEmail.textContent = user.email || "Signed in";
+      navUserEmail.classList.remove("hidden");
+    }
+    if (navDashboardBtn) navDashboardBtn.classList.remove("hidden");
+    if (navSignOutBtn) navSignOutBtn.classList.remove("hidden");
+  } else {
+    if (navSignInBtn) navSignInBtn.classList.remove("hidden");
+    if (navUserEmail) navUserEmail.classList.add("hidden");
+    if (navDashboardBtn) navDashboardBtn.classList.add("hidden");
+    if (navSignOutBtn) navSignOutBtn.classList.add("hidden");
+  }
+
+  // Home view host actions: hide Create a gallery for guest, show only when signed in
+  const heroGuestActions = $("heroGuestActions");
+  const heroAuthActions = $("heroAuthActions");
+  const heroWelcomeUser = $("heroWelcomeUser");
+
+  if (user) {
+    if (heroGuestActions) heroGuestActions.classList.add("hidden");
+    if (heroAuthActions) heroAuthActions.classList.remove("hidden");
+    if (heroWelcomeUser) {
+      const name = user.email ? user.email.split("@")[0] : "friend";
+      heroWelcomeUser.textContent = `Welcome back, ${name}!`;
+    }
+  } else {
+    if (heroGuestActions) heroGuestActions.classList.remove("hidden");
+    if (heroAuthActions) heroAuthActions.classList.add("hidden");
+  }
+
+  // Admin view
+  const loginPanel = $("loginPanel");
+  const dashboardPanel = $("dashboardPanel");
+  const adminEmail = $("adminEmail");
+  if (loginPanel) loginPanel.classList.toggle("hidden", !!user);
+  if (dashboardPanel) dashboardPanel.classList.toggle("hidden", !user);
+  if (user) {
+    if (adminEmail) adminEmail.textContent = user.email || "Signed in";
+    loadSessions();
+  } else if (stopSessions) {
+    stopSessions();
+    stopSessions = null;
+  }
+}
+
 function renderAuth() {
   if (!requireConfig()) return;
-  onAuthStateChanged(auth, user => {
-    currentUser = user;
-    $("loginPanel").classList.toggle("hidden", !!user);
-    $("dashboardPanel").classList.toggle("hidden", !user);
-    if (user) {
-      $("adminEmail").textContent = user.email || "Signed in";
-      loadSessions();
-    } else if (stopSessions) {
-      stopSessions();
-      stopSessions = null;
-    }
-  });
+  updateAuthStateUI(currentUser);
 }
 
 function loadSessions() {
@@ -1050,6 +1164,13 @@ function route() {
   } else {
     showView("homeView");
   }
+}
+
+// Global Auth State initialization
+if (auth) {
+  onAuthStateChanged(auth, user => {
+    updateAuthStateUI(user);
+  });
 }
 
 route();

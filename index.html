@@ -16,7 +16,10 @@
     <div class="top-actions">
       <span class="live-indicator"><i></i> Live sharing</span>
       <button class="btn btn-ghost btn-small" id="homeNav">Home</button>
-      <button class="btn btn-ghost btn-small" id="adminNav">Admin</button>
+      <button class="btn btn-primary btn-small" id="navSignInBtn">Sign in / Register</button>
+      <span id="navUserEmail" class="nav-user-pill hidden"></span>
+      <button class="btn btn-secondary btn-small hidden" id="navDashboardBtn">My Galleries</button>
+      <button class="btn btn-ghost btn-small hidden" id="navSignOutBtn">Sign out</button>
     </div>
   </header>
 
@@ -26,14 +29,48 @@
         <span class="eyebrow"><span class="eyebrow-line"></span> EVERY MOMENT, TOGETHER</span>
         <h1>Your event.<br><span>Everyone’s moments.</span></h1>
         <p class="hero-description">One QR code brings everyone’s photos and videos into one beautiful, live gallery. No app required.</p>
-        <div class="hero-actions">
-          <button class="btn btn-primary" id="createFromHero">Create a gallery <span>→</span></button>
-          <button class="btn btn-secondary" id="joinInfo">How it works</button>
+
+        <!-- Prominent Join Gallery Section -->
+        <div class="join-card-box">
+          <div class="join-card-header">
+            <span class="choice-icon">🔗</span>
+            <div>
+              <b>Join an Event Gallery</b>
+              <p>Paste a shared gallery link or enter an event code to join and see pictures.</p>
+            </div>
+          </div>
+          <div class="join-input-group">
+            <input id="heroSessionInput" placeholder="Paste gallery link or code (e.g. https://... or 3ROpOl...)">
+            <button class="btn btn-primary" id="heroJoinBtn">Join & View Photos <span>→</span></button>
+          </div>
         </div>
-        <div class="hero-join-bar">
-          <input id="heroSessionInput" placeholder="Have a gallery code or link?">
-          <button class="btn btn-secondary btn-small" id="heroJoinBtn">Join</button>
+
+        <!-- Before Login: User must sign in or create account first to create a gallery -->
+        <div id="heroGuestActions" class="hero-host-box">
+          <div class="host-copy">
+            <span class="host-badge">HOST AN EVENT</span>
+            <b>Want to create a photo gallery?</b>
+            <p>Sign in or create an account first to start your own gallery, get a QR code, and collect photos from guests.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="loginFromHero">Sign In / Create Account <span>→</span></button>
+            <button class="btn btn-secondary" id="joinInfo">How it works</button>
+          </div>
         </div>
+
+        <!-- After Login: Show Create a Gallery and My Galleries -->
+        <div id="heroAuthActions" class="hero-host-box logged-in hidden">
+          <div class="host-copy">
+            <span class="host-badge host-badge-active">● SIGNED IN</span>
+            <b id="heroWelcomeUser">Welcome back!</b>
+            <p>You can create a new shared event gallery or view your collections.</p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="createFromHero">＋ Create a gallery <span>→</span></button>
+            <button class="btn btn-secondary" id="myGalleriesBtn">My Galleries</button>
+          </div>
+        </div>
+
         <div class="trust-row">
           <span>✓ No app to install</span>
           <span>✓ Instant sharing</span>
