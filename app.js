@@ -417,27 +417,73 @@ $("sessionForm").addEventListener("submit", async e => {
 
 async function openQr(id, name) {
   $("qrTitle").textContent = name;
-  $("shareUrl").textContent = sessionUrl(id);
+  const url = sessionUrl(id);
+  $("shareUrl").textContent = url;
   openModal("qrModal");
-  if (window.QRCode) {
-    try {
-      await QRCode.toCanvas($("qrCanvas"), sessionUrl(id), { width: 240, margin: 1, errorCorrectionLevel: "H" });
-    } catch (e) {
-      console.warn("QR render issue:", e);
+
+  const canvas = $("qrCanvas");
+  let qrGenerated = false;
+
+  if (canvas) {
+    // Clear canvas before drawing
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    if (window.QRCode && typeof window.QRCode.toCanvas === "function") {
+      try {
+        await window.QRCode.toCanvas(canvas, url, {
+          width: 240,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: {
+            dark: "#111827",
+            light: "#ffffff"
+          }
+        });
+        qrGenerated = true;
+      } catch (qrErr) {
+        console.warn("QRCode.toCanvas failed, using fallback:", qrErr);
+      }
+    }
+
+    // High-reliability fallback if library did not render
+    if (!qrGenerated && ctx) {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          canvas.width = 240;
+          canvas.height = 240;
+          ctx.drawImage(img, 0, 0, 240, 240);
+        };
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(url)}`;
+      } catch (fallbackErr) {
+        console.warn("QR fallback image error:", fallbackErr);
+      }
     }
   }
+
   $("downloadQr").onclick = () => {
-    const a = document.createElement("a");
-    a.download = `${safeName(name)}-QR.png`;
-    a.href = $("qrCanvas").toDataURL("image/png");
-    a.click();
+    try {
+      const a = document.createElement("a");
+      a.download = `${safeName(name)}-QR.png`;
+      a.href = $("qrCanvas").toDataURL("image/png");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}`, "_blank");
+    }
   };
+
   $("copyLink").onclick = async () => {
     try {
-      await navigator.clipboard.writeText(sessionUrl(id));
+      await navigator.clipboard.writeText(url);
       toast("Sharing link copied.");
     } catch {
-      toast("Link: " + sessionUrl(id));
+      toast("Link: " + url);
     }
   };
 }
