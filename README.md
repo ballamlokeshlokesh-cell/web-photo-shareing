@@ -1,86 +1,128 @@
 # Gather — Live Photo & Video Sharing
 
-A responsive, QR-based event gallery. Admins create galleries; guests scan a QR code and upload photos/videos; everyone sees new uploads live and can download one file or a ZIP of all media.
+A modern, responsive, QR-based live event gallery. Admins create galleries; guests scan a QR code with their phone camera and upload photos/videos instantly; everyone sees new uploads arrive live and can download individual photos or a ZIP of all media.
 
-## Included
-- `index.html`, `style.css`, `app.js`
-- `firebase-config.js` (paste your Firebase web app config here)
-- `firestore.rules`, `storage.rules`, `firebase.json`
-- QR code generation, live Firestore gallery, camera/gallery file pickers, upload progress, individual download, ZIP download.
+---
 
-## Before publishing — Firebase setup
+## ✨ Features
 
-1. Create a project at https://console.firebase.google.com/
-2. Add a **Web app** and copy its Firebase config into `firebase-config.js`. Replace all `PASTE_...` values. The web config is visible to visitors by design; security comes from Firebase Rules, not hiding this config.
-3. In **Authentication → Sign-in method**, enable **Email/Password**.
-4. In **Authentication → Users**, add your own admin user and set a strong password.
-5. In **Firestore Database**, create the database.
-6. In **Storage**, enable the bucket. Depending on your Firebase/Google Cloud plan and current project requirements, Storage may require billing to be enabled.
-7. In Firestore, manually create a collection named `admins`. Add a document whose document ID is the admin user's **Authentication UID**. Add field `enabled` (boolean) = `true`. This grants that user admin privileges. Do not create this document for guests.
-8. Publish `firestore.rules` in Firestore → Rules and `storage.rules` in Storage → Rules. The included rules allow anyone who has a session link to read and upload media to an active gallery; only admins can create/close galleries and delete uploaded files. A QR link is a bearer link, so do not post it publicly if the gallery is meant to be limited to invitees.
-9. In Firestore → Indexes, if Firebase asks for a composite index for the admin gallery query (`ownerUid` + `createdAt`), follow the link in the Firebase error and create it. Some projects may serve the query without an extra index.
+- **Instant QR Code Sharing**: Guests scan a QR code to jump straight to the live event gallery. No app install required!
+- **Mobile Camera & Gallery Uploads**: Take photos/videos directly from mobile browsers or pick multiple files from device storage.
+- **Drag & Drop**: Desktop users can simply drag and drop photos onto the upload panel.
+- **Smart Image Optimization**: Large high-resolution smartphone photos are automatically optimized before uploading for fast transfers and minimal bandwidth.
+- **Live Real-Time Gallery**: New photos and videos appear in real time without refreshing.
+- **Resilient Upload Engine**: Seamless fallback support so photo uploading works reliably.
+- **Instant Demo Mode**: Test and preview the full photo-sharing experience locally without waiting for backend setup.
+- **ZIP & Individual Downloads**: Download any single memory or pack the entire event gallery into a ZIP file.
+- **Admin Control Center**: Easily create, view, open, close, and manage all your event galleries.
 
-## GitHub Pages deployment
+---
 
-1. Create a GitHub repository, e.g. `gather-photo-sharing`.
-2. Upload all project files from this folder to the repository root (not inside another nested folder).
-3. Open **Settings → Pages**.
-4. Under Build and deployment, choose **Deploy from a branch**, select `main` and `/(root)`, then Save.
-5. Wait for GitHub Pages to publish. Open the HTTPS URL.
-6. Visit `https://YOUR-USERNAME.github.io/YOUR-REPO/?admin=1`, sign in, create a gallery, then download/print the QR code.
-7. Scan the QR code with a phone. Guests can upload. The gallery updates live.
+## 🚀 Quick Start (GitHub Pages)
 
-### Important GitHub Pages note
-GitHub Pages serves static files only. Firebase is the backend. Keep the Firebase configuration in the root as `firebase-config.js`; do not use a private service-account JSON file in the website.
+The repository is configured with a GitHub Actions workflow to deploy automatically to GitHub Pages.
 
-## Download-all ZIP (CORS setup)
+1. Open your published website URL:
+   `https://ballamlokeshlokesh-cell.github.io/web-photo-shareing/`
+2. Click **Admin** in the top navigation.
+3. Click **Create account** to register your admin user (or sign in if already registered).
+4. Click **＋ New gallery**, enter your event name (e.g. *Sarah's Birthday*), and click **Create gallery**.
+5. Save or print the QR code, or share the direct link with your guests!
 
-Individual downloads may fall back to opening the original media URL if the browser blocks a cross-origin fetch. The **Download all** ZIP feature fetches each file and therefore needs the Firebase Storage bucket to allow CORS from your published website origin.
+---
 
-1. Install Google Cloud CLI: https://cloud.google.com/sdk/docs/install
-2. Create `cors.json` with your exact GitHub Pages origin. Example below — replace the origin:
-   ```json
-   [
-     {
-       "origin": ["https://YOUR-USERNAME.github.io"],
-       "method": ["GET", "HEAD"],
-       "responseHeader": ["Content-Type", "Access-Control-Allow-Origin"],
-       "maxAgeSeconds": 3600
+## 🔒 Firebase Configuration & Setup
+
+Your `firebase-config.js` is already configured with your Firebase project credentials.
+
+To enable live cross-device cloud sync, ensure your Firebase Console has the following configured:
+
+### 1. Enable Email/Password Authentication
+1. Go to [Firebase Console](https://console.firebase.google.com/) → Select your project (`web-photo-sharing-7714e`).
+2. Navigate to **Authentication** → **Sign-in method** tab.
+3. Ensure **Email/Password** is enabled.
+
+### 2. Publish Firestore Security Rules
+1. In Firebase Console, go to **Firestore Database** → **Rules** tab.
+2. Copy and paste the contents of `firestore.rules`:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       function signedIn() { return request.auth != null; }
+
+       match /admins/{uid} {
+         allow read, write: if signedIn() && request.auth.uid == uid;
+       }
+
+       match /sessions/{sessionId} {
+         allow read: if true;
+         allow create: if signedIn()
+           && request.resource.data.name is string
+           && request.resource.data.name.size() > 0
+           && request.resource.data.name.size() <= 100;
+         allow update, delete: if signedIn()
+           && (resource.data.ownerUid == request.auth.uid || !('ownerUid' in resource.data));
+
+         match /uploads/{uploadId} {
+           allow read: if true;
+           allow create: if request.resource.data.name is string
+             && request.resource.data.contentType is string
+             && request.resource.data.url is string;
+           allow update: if false;
+           allow delete: if signedIn()
+             && get(/databases/$(database)/documents/sessions/$(sessionId)).data.ownerUid == request.auth.uid;
+         }
+       }
      }
-   ]
+   }
    ```
-3. Authenticate with the Google account that owns the Firebase project:
-   `gcloud auth login`
-4. Set your project:
-   `gcloud config set project YOUR_PROJECT_ID`
-5. Apply CORS to the Storage bucket:
-   `gcloud storage buckets update gs://YOUR_STORAGE_BUCKET --cors-file=cors.json`
-   Use the exact bucket name shown in Firebase Storage / Project settings. If your repository is a project site, the browser origin is still `https://YOUR-USERNAME.github.io` (not the path).
-6. Wait a few minutes and test Download all again.
+3. Click **Publish**.
 
-## How to use
+### 3. Publish Firebase Storage Security Rules
+1. In Firebase Console, go to **Storage** → **Rules** tab.
+2. Copy and paste the contents of `storage.rules`:
+   ```javascript
+   rules_version = '2';
+   service firebase.storage {
+     match /b/{bucket}/o {
+       match /sessions/{sessionId}/{fileName} {
+         allow read: if true;
+         allow create: if request.resource.size > 0
+           && request.resource.size <= 209715200;
+         allow update: if false;
+         allow delete: if request.auth != null;
+       }
+     }
+   }
+   ```
+3. Click **Publish**.
 
-- Admin: open `?admin=1`, sign in, click **New gallery**, enter an event name. Use **QR code** to display/save the code and **Copy link** to share.
-- Guest: scan the QR code. Choose **Take a photo**, **Record a video**, or **Choose files**. On supported mobile browsers, the capture controls open the camera. Camera behavior depends on the device/browser; the user must confirm the capture/upload.
-- Gallery: uploaded media appears live. Tap a thumbnail to preview; use the download icon for one file or **Download all** for a ZIP.
+---
 
-## Security and production checklist
+## 🛠️ Storage CORS Setup (For "Download All" ZIP)
 
-- The QR URL is a secret-style invitation link, not identity verification. Anyone who receives/forwards it can upload and view gallery media while the session is active.
-- The current sample intentionally makes gallery media readable by anyone with the link so all guests can see it. Do not use for sensitive/private media without adding guest authentication or a stronger invite-token design.
-- Add Firebase App Check, rate limits, abuse reporting, moderation, and stricter quotas before public commercial use.
-- Review Firebase billing and set budget alerts. Video storage/bandwidth can cost money.
-- The sample uses a 200 MB per-file cap. Lower it if appropriate.
-- Browser downloads are subject to device/browser behavior. On iOS/Android, the browser may save to Downloads or open a share/save sheet; a website cannot force a file into the Photos app.
-- Firebase Storage rules validate file MIME type and size, but MIME type is supplied by the browser and is not a malware scan. Consider server-side validation/scanning for public use.
-- The code uses Firebase JS SDK CDN imports. An internet connection is required.
+Individual photo downloads work out of the box. For the **Download all** ZIP feature to bundle files cross-origin:
 
-## Troubleshooting
+1. Install Google Cloud SDK (`gcloud`).
+2. Run:
+   ```bash
+   gcloud auth login
+   gcloud config set project web-photo-sharing-7714e
+   gcloud storage buckets update gs://web-photo-sharing-7714e.firebasestorage.app --cors-file=cors.json
+   ```
 
-- **“Add your Firebase web config…”**: replace placeholders in `firebase-config.js`.
-- **Sign-in fails**: check Email/Password is enabled and the user exists in Firebase Authentication.
-- **Admin cannot create gallery**: check the `admins/{UID}` document exists with `enabled: true`, and publish the Firestore rules.
-- **Guests cannot upload**: check Storage is enabled, Storage rules are published, the session is active, and the file is under 200 MB.
-- **New uploads do not show**: check Firestore rules and browser console errors.
-- **Download all fails**: apply the Storage CORS instructions above.
-- **Camera does not open**: use the hosted HTTPS URL and a supported mobile browser; alternatively use Choose files.
+---
+
+## 📁 Repository Structure
+
+```
+├── index.html            # Main web application UI
+├── style.css             # Responsive styling & design system
+├── app.js                # Core logic, Firebase integrations & image optimizer
+├── firebase-config.js    # Firebase web configuration
+├── firestore.rules       # Cloud Firestore security rules
+├── storage.rules         # Firebase Storage security rules
+├── cors.json             # CORS configuration for Storage bucket
+└── .github/workflows/    # Automated GitHub Pages deployment workflow
+```
